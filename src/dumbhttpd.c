@@ -49,7 +49,7 @@ void* cthread(void* arg) {
 
 		if(d_crlf != NULL) {
 			printf("detected double crlf\n");
-			int crlf_pos = d_crlf - header_buf;
+			int crlf_pos = d_crlf - header_buf + 2;
 			strncpy(header_safe, header_buf, crlf_pos);
 			done = 1;
 		}
@@ -63,8 +63,21 @@ void* cthread(void* arg) {
 
 		printf("received %i, total received: %i\n", rcv, rcvd);
 	}
+	
+	printf("\033[0;32m");
 
-	printf("client says: \n%s\n", header_safe);
+	char *p = header_safe;
+
+	while(*p) {
+		switch(*p) {
+			case '\r': printf("\\r");break;
+			case '\n': printf("\\n\n");break;
+			default: putchar(*p);break;
+		}
+		p++;
+	}
+
+	printf("\033[0m");
 	//while ((read(c->cfd, NULL, BUFSIZE-1)) != 0);
 
 	int w = 0, to_w = strlen(sendstr);
