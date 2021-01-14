@@ -22,20 +22,20 @@ struct cln {
 void* cthread(void* arg) {
 	struct cln* c = (struct cln*) arg;
 
-	char header_buf[BUFSIZE] = "";
-	char header_safe[BUFSIZE] = "";
+	char buf[BUFSIZE] = "";
+	char headers[BUFSIZE] = "";
 	char *d_crlf;
 	char *sendstr = "HTTP/1.1 200 OK", *crlf = "\r\n\r\n";
-	int rcv = 0, rcvd_pre = 0, rcvd = 0, done = 0, header_safe_len = 0;
+	int rcv = 0, rcvd_pre = 0, rcvd = 0, done = 0, headers_len = 0;
 
 	printf("conn: %s\n", inet_ntoa((struct in_addr)c->caddr.sin_addr));
 
-	memset(header_safe, 0, sizeof(header_safe));
+	memset(headers, 0, sizeof(headers));
 
 	while (!done) {
 		printf("reading %i\n", BUFSIZE);
-		memset(header_buf, 0, sizeof(header_buf));
-		rcv = read(c->cfd, header_buf, BUFSIZE-1);
+		memset(buf, 0, sizeof(buf));
+		rcv = read(c->cfd, buf, BUFSIZE-1);
 
 		if (rcv == 0) {
 			break;
@@ -45,12 +45,12 @@ void* cthread(void* arg) {
 
 		rcvd += rcv;
 
-		d_crlf = strstr(header_buf, crlf);
+		d_crlf = strstr(buf, crlf);
 
 		if(d_crlf != NULL) {
 			printf("detected double crlf\n");
-			int crlf_pos = d_crlf - header_buf + 2;
-			strncpy(header_safe, header_buf, crlf_pos);
+			int crlf_pos = d_crlf - buf + 2;
+			strncpy(headers, buf, crlf_pos);
 			done = 1;
 		}
 
@@ -66,7 +66,7 @@ void* cthread(void* arg) {
 	
 	printf("\033[0;32m");
 
-	char *p = header_safe;
+	char *p = headers;
 
 	while(*p) {
 		switch(*p) {
