@@ -24,8 +24,9 @@ void* cthread(void* arg) {
 
 	char header_buf[BUFSIZE] = "";
 	char header_safe[BUFSIZE] = "";
-	char *sendstr = "HTTP/1.1 200 OK";
-	int rcv = 0, rcvd_pre = 0, rcvd = 0, done = 0;
+	char *d_crlf;
+	char *sendstr = "HTTP/1.1 200 OK", *crlf = "\r\n\r\n";
+	int rcv = 0, rcvd_pre = 0, rcvd = 0, done = 0, header_safe_len = 0;
 
 	printf("conn: %s\n", inet_ntoa((struct in_addr)c->caddr.sin_addr));
 
@@ -42,25 +43,37 @@ void* cthread(void* arg) {
 			break;
 		}
 
-		rcvd_pre += rcv;
+		rcvd += rcv;
+
+		d_crlf = strstr(header_buf, crlf);
+
+		if(d_crlf != NULL) {
+			printf("detected double crlf\n");
+			int crlf_pos = d_crlf - header_buf;
+			strncpy(header_safe, header_buf, crlf_pos);
+			done = 1;
+		}
 
 		printf("check if overflow\n");
-		if (rcvd_pre >= BUFSIZE) {
+		if (rcvd >= BUFSIZE) {
 			printf("buffer overflow!\n");
+			//while ((read(c->cfd, NULL, BUFSIZE-1)) != 0)
 			break;
 		}
 
-		printf("copy to buffer\n");
-		strncpy(header_safe+rcvd, header_buf, rcv);
-		rcvd += rcv;
-
 		printf("received %i, total received: %i\n", rcv, rcvd);
-		if (header_safe[rcvd-2] == '\r' && header_safe[rcvd-1] == '\n') done = 1;
 	}
 
-	printf("client says: \n %s\n", header_safe);
+	printf("client says: \n%s\n", header_safe);
+	//while ((read(c->cfd, NULL, BUFSIZE-1)) != 0);
 
-	write(c->cfd, sendstr, strlen(sendstr));
+	int w = 0, to_w = strlen(sendstr);
+
+	while (w < to_w) {
+		w += write(c->cfd, sendstr+w, to_w - w);
+		printf("written: %i/%i\n", w, to_w);
+	}
+
 	close(c->cfd);
 
 	free(c);
