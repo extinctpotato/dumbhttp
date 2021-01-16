@@ -47,7 +47,7 @@ void parse_headers(char* hstr, struct headers* h) {
 
 	char hstr_local[BUFSIZE] = "";
 	char first_line[BUFSIZE] = "";
-	char *line = NULL, *header_key = NULL, *header_val = NULL;
+	char *line = NULL;
 	char *saveptr, *saveptr_first_line, *saveptr_line;
 	int line_counter = 0;
 
@@ -58,6 +58,7 @@ void parse_headers(char* hstr, struct headers* h) {
 	while (line != NULL)
 	{
 		printf("parsing: %s\n", line);
+		char *header_key = NULL, *header_val = NULL;
 
 		if (!line_counter) {
 			strcpy(first_line, line);
@@ -68,9 +69,13 @@ void parse_headers(char* hstr, struct headers* h) {
 		}
 
 		header_key = strtok_r(line, ": ", &saveptr_line);
-		header_val = strtok_r(NULL, ": ", &saveptr_line);
+		header_val = saveptr_line+1;
 
-		printf("key: %s, val: %s, remainder: %s\n", header_key, header_val, saveptr_line);
+		if (strcmp(header_key, "Content-Length") == 0) {
+			h->content_length = atol(header_val);
+		}
+
+		printf("key: %s, val: %s\n", header_key, header_val);
 
 		line = strtok_r(NULL, "\r\n", &saveptr);
 
@@ -134,10 +139,10 @@ void* cthread(void* arg) {
 	strcpy(body, buf+crlf_pos);
 
 	parse_headers(headers, h);
-	printf("%s, %s, %s", h->method, h->path, h->ver);
+	printf("%s, %s, %s, %ld\n", h->method, h->path, h->ver, h->content_length);
 
 	memset(buf, 0, sizeof(buf));
-	int content_length = 127 - strlen(body);
+	int content_length = h->content_length - strlen(body);
 	rcv = 0;
 	rcvd = 0;
 	
