@@ -3,7 +3,7 @@ CFLAGS = -Wall -pthread
 BIN_DIR = ./bin/
 SRC_DIR = ./src/
 
-PROGS = dumbhttpd
+PROGS = dumbhttpd djb2
 LIST = $(addprefix $(BIN_DIR), $(PROGS))
 
 .PHONY: clean
