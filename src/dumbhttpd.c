@@ -23,6 +23,9 @@ struct headers {
 	char *method;
 	char *path;
 	char *ver;
+	char *connection;
+	char *content_type;
+	char *server;
 	long content_length;
 };
 
@@ -37,6 +40,11 @@ void vprint(char* str) {
 		}
 		p++;
 	}
+}
+
+void make_headers(int s, struct headers* h, char* resp, int resp_size) {
+	snprintf(resp, resp_size, "HTTP/1.1 %i %s\r\n", s, HS_reasonPhrase(s));
+
 }
 
 void parse_headers(char* hstr, struct headers* h) {
@@ -89,8 +97,9 @@ void* cthread(void* arg) {
 	char buf[BUFSIZE] = "";
 	char headers[BUFSIZE] = "";
 	char body[BUFSIZE] = "";
+	char sendstr[BUFSIZE] = "";
 	char *d_crlf;
-	char *sendstr = "HTTP/1.1 200 OK", *crlf = "\r\n\r\n";
+	char *crlf = "\r\n\r\n";
 	int rcv = 0, rcvd_pre = 0, rcvd = 0, done = 0, headers_len = 0;
 	int crlf_pos;
 
@@ -124,7 +133,6 @@ void* cthread(void* arg) {
 		printf("check if overflow\n");
 		if (rcvd >= BUFSIZE) {
 			printf("buffer overflow!\n");
-			//while ((read(c->cfd, NULL, BUFSIZE-1)) != 0)
 			break;
 		}
 
@@ -154,7 +162,7 @@ void* cthread(void* arg) {
 	vprint(body);
 	printf("\033[0m\n");
 
-	//while ((read(c->cfd, NULL, BUFSIZE-1)) != 0);
+	make_headers(200, h, sendstr, sizeof(sendstr));
 
 	int w = 0, to_w = strlen(sendstr);
 
