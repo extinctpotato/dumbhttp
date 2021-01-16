@@ -12,6 +12,7 @@
 #include <netdb.h>
 #include <pthread.h> 
 #include "http_status_codes.h"
+#include "hash.h"
 
 struct cln {
 	int cfd;
@@ -156,6 +157,8 @@ void* cthread(void* arg) {
 
 	parse_headers(headers, h);
 	printf("%s, %s, %s, %ld\n", h->method, h->path, h->ver, h->content_length);
+
+	printf("method hash: %li\n", hash(h->method));
 
 	// We might have already received some body in the previous calls,
 	// so let's receive whatever that remains in the TCP buffer.

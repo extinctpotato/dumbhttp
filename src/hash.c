@@ -11,6 +11,4 @@ unsigned long hash(char *str) {
 
 	return hash;
 }
-int main(int argc, char **argv) {
-	printf("%lu\n", hash(argv[1]));
-}
+
