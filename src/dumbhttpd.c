@@ -81,6 +81,8 @@ void parse_headers(char* hstr, struct headers* h) {
 
 		printf("parsing: %s\n", line);
 
+		// Key has no colon, while val is incremented
+		// to get rid of a spurious space.
 		header_key = strtok_r(line, ": ", &saveptr_line);
 		header_val = saveptr_line+1;
 
@@ -129,6 +131,8 @@ void* cthread(void* arg) {
 
 		if(d_crlf != NULL) {
 			printf("detected double crlf\n");
+			// Find the position but fast-forward by two
+			// in order to catch the last CR LF as well.
 			crlf_pos = d_crlf - buf + 2;
 			strncpy(headers, buf, crlf_pos);
 			crlf_pos += 2;
@@ -153,6 +157,8 @@ void* cthread(void* arg) {
 	parse_headers(headers, h);
 	printf("%s, %s, %s, %ld\n", h->method, h->path, h->ver, h->content_length);
 
+	// We might have already received some body in the previous calls,
+	// so let's receive whatever that remains in the TCP buffer.
 	memset(buf, 0, sizeof(buf));
 	int content_length = h->content_length - strlen(body);
 	rcv = 0;
@@ -166,6 +172,8 @@ void* cthread(void* arg) {
 	printf("\033[0;31m");
 	vprint(body);
 	printf("\033[0m\n");
+
+
 
 	make_headers(200, h, sendstr, sizeof(sendstr));
 
