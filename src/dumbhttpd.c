@@ -1,5 +1,10 @@
 #define _GNU_SOURCE
-#define BUFSIZE 8024
+#define BUFSIZE  8024
+#define H_GET	 193456677
+#define H_POST	 6384404715
+#define H_PUT	 193467006
+#define H_HEAD	 6384105719
+#define H_DELETE 6952134985656
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -51,6 +56,13 @@ void make_headers(int s, struct headers* h, char* resp, int resp_size) {
 	cursor += strlen(cursor);
 	snprintf(cursor, resp_size, "Server: dumbhttp\r\n");
 	cursor += strlen(cursor);
+
+	if (h->content_length != 0) {
+		snprintf(cursor, resp_size, "Content-Length: %li\r\n", h->content_length);
+		cursor += strlen(cursor);
+	}
+
+	snprintf(cursor, resp_size, "\r\n");
 }
 
 void parse_headers(char* hstr, struct headers* h) {
@@ -176,9 +188,36 @@ void* cthread(void* arg) {
 	vprint(body);
 	printf("\033[0m\n");
 
+	// Content-Length might be >0 because client might have set it.
+	// Reset it back to zero as it might be reused for GET.
+	h->content_length = 0;
 
+	int response_code = 200;
+	char path[100] = "";
 
-	make_headers(200, h, sendstr, sizeof(sendstr));
+	switch(hash(h->method)) {
+		case H_GET:
+			snprintf(path, sizeof(path), "%s%s", c->dir, h->path);
+			printf("path: %s\n", path);
+			FILE *sf = fopen(path, "r");
+			if (sf == NULL) {
+				response_code = 404;
+			}
+			break;
+		case H_POST:
+			break;
+		case H_PUT:
+			break;
+		case H_HEAD:
+			break;
+		case H_DELETE:
+			break;
+		default:
+			response_code = 500;
+
+	}
+
+	make_headers(response_code, h, sendstr, sizeof(sendstr));
 
 	int w = 0, to_w = strlen(sendstr);
 
@@ -220,10 +259,13 @@ int main(int argc, char **argv) {
 	bind(sfd, (struct sockaddr*)&saddr, sizeof(saddr));
 	listen(sfd, 5);
 
+	printf("hashes: %i %li %i %li %li\n", H_GET, H_POST, H_PUT, H_HEAD, H_DELETE);
+
 	while(1) {
 		struct cln* c = malloc(sizeof(struct cln));
 		slt = sizeof(c->caddr);
 		c->cfd = accept(sfd, (struct sockaddr*)&c->caddr, &slt);
+		c->dir = dir;
 		pthread_create(&tid, NULL, cthread, c);
 		pthread_detach(tid);
 	}
