@@ -56,6 +56,8 @@ void make_headers(int s, struct headers* h, char* resp, int resp_size) {
 	cursor += strlen(cursor);
 	snprintf(cursor, resp_size, "Server: dumbhttp\r\n");
 	cursor += strlen(cursor);
+	snprintf(cursor, resp_size, "Content-Type: text/html; charset=UTF-8\r\n");
+	cursor += strlen(cursor);
 
 	if (h->content_length != 0) {
 		snprintf(cursor, resp_size, "Content-Length: %li\r\n", h->content_length);
@@ -194,15 +196,21 @@ void* cthread(void* arg) {
 
 	int response_code = 200;
 	char path[100] = "";
+	char data[BUFSIZE] = "";
 	FILE *sf;
 
 	switch(hash(h->method)) {
 		case H_GET:
+			if (strcmp(h->path, "/") == 0) h->path = "/index.html";
 			snprintf(path, sizeof(path), "%s%s", c->dir, h->path);
 			printf("path: %s\n", path);
 			sf = fopen(path, "r");
 			if (sf == NULL) {
 				response_code = 404;
+			} else {
+				fseek(sf, 0, SEEK_END);
+				h->content_length = ftell(sf);
+				fseek(sf, 0, SEEK_SET);
 			}
 			break;
 		case H_POST:
@@ -226,6 +234,17 @@ void* cthread(void* arg) {
 		w += write(c->cfd, sendstr+w, to_w - w);
 		printf("written: %i/%i\n", w, to_w);
 	}
+
+	w = 0; to_w = h->content_length;
+
+	if (to_w > 0) {
+		while (fgets(data, BUFSIZE, sf) != NULL) {
+			w += write(c->cfd, data, strlen(data));
+		}
+		bzero(data, BUFSIZE);
+	}
+
+	printf("written body: %i/%i\n", w, to_w);
 
 	close(c->cfd);
 
