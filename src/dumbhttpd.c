@@ -40,10 +40,7 @@ void vprint(char* str) {
 }
 
 void parse_headers(char* hstr, struct headers* h) {
-	h->method = "GET";
-	h->path = "/fsdf/";
-	h->ver = "1.1";
-	h->content_length = 121212;
+	h->content_length = 0;
 
 	char hstr_local[BUFSIZE] = "";
 	char first_line[BUFSIZE] = "";
@@ -57,7 +54,6 @@ void parse_headers(char* hstr, struct headers* h) {
 	
 	while (line != NULL)
 	{
-		printf("parsing: %s\n", line);
 		char *header_key = NULL, *header_val = NULL;
 
 		if (!line_counter) {
@@ -65,8 +61,12 @@ void parse_headers(char* hstr, struct headers* h) {
 			h->method = strtok_r(first_line, " ", &saveptr_first_line);
 			h->path   = strtok_r(NULL, " ", &saveptr_first_line);
 			h->ver    = strtok_r(NULL, " ", &saveptr_first_line);
-			line += strlen(first_line);
+			line = strtok_r(NULL, "\r\n", &saveptr);
+			line_counter++;
+			continue;
 		}
+
+		printf("parsing: %s\n", line);
 
 		header_key = strtok_r(line, ": ", &saveptr_line);
 		header_val = saveptr_line+1;
@@ -78,7 +78,6 @@ void parse_headers(char* hstr, struct headers* h) {
 		printf("key: %s, val: %s\n", header_key, header_val);
 
 		line = strtok_r(NULL, "\r\n", &saveptr);
-
 		line_counter++;
 	}
 }
@@ -167,6 +166,7 @@ void* cthread(void* arg) {
 	close(c->cfd);
 
 	free(c);
+	free(h);
 	return EXIT_SUCCESS;
 }
 
