@@ -120,7 +120,7 @@ void* cthread(void* arg) {
 	char sendstr[BUFSIZE] = "";
 	char *d_crlf;
 	char *crlf = "\r\n\r\n";
-	int rcv = 0, rcvd_pre = 0, rcvd = 0, done = 0, headers_len = 0;
+	int rcv = 0, rcvd = 0, done = 0;
 	int crlf_pos;
 
 	printf("conn: %s\n", inet_ntoa((struct in_addr)c->caddr.sin_addr));
@@ -194,12 +194,13 @@ void* cthread(void* arg) {
 
 	int response_code = 200;
 	char path[100] = "";
+	FILE *sf;
 
 	switch(hash(h->method)) {
 		case H_GET:
 			snprintf(path, sizeof(path), "%s%s", c->dir, h->path);
 			printf("path: %s\n", path);
-			FILE *sf = fopen(path, "r");
+			sf = fopen(path, "r");
 			if (sf == NULL) {
 				response_code = 404;
 			}
