@@ -43,8 +43,13 @@ void vprint(char* str) {
 }
 
 void make_headers(int s, struct headers* h, char* resp, int resp_size) {
-	snprintf(resp, resp_size, "HTTP/1.1 %i %s\r\n", s, HS_reasonPhrase(s));
-
+	char *cursor = resp;
+	snprintf(cursor, resp_size, "HTTP/1.1 %i %s\r\n", s, HS_reasonPhrase(s));
+	cursor += strlen(cursor);
+	snprintf(cursor, resp_size, "Connection: Close\r\n");
+	cursor += strlen(cursor);
+	snprintf(cursor, resp_size, "Server: dumbhttp\r\n");
+	cursor += strlen(cursor);
 }
 
 void parse_headers(char* hstr, struct headers* h) {
