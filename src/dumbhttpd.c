@@ -19,14 +19,76 @@ struct cln {
 	char *dir;
 };
 
+struct headers {
+	char *method;
+	char *path;
+	char *ver;
+	long content_length;
+};
+
+void vprint(char* str) {
+	char *p = str;
+
+	while(*p) {
+		switch(*p) {
+			case '\r': printf("\\r");break;
+			case '\n': printf("\\n\n");break;
+			default: putchar(*p);break;
+		}
+		p++;
+	}
+}
+
+void parse_headers(char* hstr, struct headers* h) {
+	h->method = "GET";
+	h->path = "/fsdf/";
+	h->ver = "1.1";
+	h->content_length = 121212;
+
+	char hstr_local[BUFSIZE] = "";
+	char first_line[BUFSIZE] = "";
+	char *line = NULL, *header_key = NULL, *header_val = NULL;
+	char *saveptr, *saveptr_first_line, *saveptr_line;
+	int line_counter = 0;
+
+	strcpy(hstr_local, hstr);
+
+	line = strtok_r(hstr_local, "\r\n", &saveptr);
+	
+	while (line != NULL)
+	{
+		printf("parsing: %s\n", line);
+
+		if (!line_counter) {
+			strcpy(first_line, line);
+			h->method = strtok_r(first_line, " ", &saveptr_first_line);
+			h->path   = strtok_r(NULL, " ", &saveptr_first_line);
+			h->ver    = strtok_r(NULL, " ", &saveptr_first_line);
+			line += strlen(first_line);
+		}
+
+		header_key = strtok_r(line, ": ", &saveptr_line);
+		header_val = strtok_r(NULL, ": ", &saveptr_line);
+
+		printf("key: %s, val: %s, remainder: %s\n", header_key, header_val, saveptr_line);
+
+		line = strtok_r(NULL, "\r\n", &saveptr);
+
+		line_counter++;
+	}
+}
+
 void* cthread(void* arg) {
 	struct cln* c = (struct cln*) arg;
+	struct headers* h = malloc(sizeof(struct headers));
 
 	char buf[BUFSIZE] = "";
 	char headers[BUFSIZE] = "";
+	char body[BUFSIZE] = "";
 	char *d_crlf;
 	char *sendstr = "HTTP/1.1 200 OK", *crlf = "\r\n\r\n";
 	int rcv = 0, rcvd_pre = 0, rcvd = 0, done = 0, headers_len = 0;
+	int crlf_pos;
 
 	printf("conn: %s\n", inet_ntoa((struct in_addr)c->caddr.sin_addr));
 
@@ -49,8 +111,9 @@ void* cthread(void* arg) {
 
 		if(d_crlf != NULL) {
 			printf("detected double crlf\n");
-			int crlf_pos = d_crlf - buf + 2;
+			crlf_pos = d_crlf - buf + 2;
 			strncpy(headers, buf, crlf_pos);
+			crlf_pos += 2;
 			done = 1;
 		}
 
@@ -65,19 +128,28 @@ void* cthread(void* arg) {
 	}
 	
 	printf("\033[0;32m");
+	vprint(headers);
+	printf("\033[0m");
 
-	char *p = headers;
+	strcpy(body, buf+crlf_pos);
 
-	while(*p) {
-		switch(*p) {
-			case '\r': printf("\\r");break;
-			case '\n': printf("\\n\n");break;
-			default: putchar(*p);break;
-		}
-		p++;
+	parse_headers(headers, h);
+	printf("%s, %s, %s", h->method, h->path, h->ver);
+
+	memset(buf, 0, sizeof(buf));
+	int content_length = 127 - strlen(body);
+	rcv = 0;
+	rcvd = 0;
+	
+	while (rcvd != content_length) {
+		rcv = read(c->cfd, buf, BUFSIZE-1);
+		rcvd += rcv;
 	}
 
-	printf("\033[0m");
+	printf("\033[0;31m");
+	vprint(body);
+	printf("\033[0m\n");
+
 	//while ((read(c->cfd, NULL, BUFSIZE-1)) != 0);
 
 	int w = 0, to_w = strlen(sendstr);
