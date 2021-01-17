@@ -181,17 +181,19 @@ void* cthread(void* arg) {
 	h->content_length = 0;
 
 	int response_code = 200;
+	int del;
 	char path[100] = "";
 	char data[BUFSIZE] = "";
 	FILE *sf;
 
+	if (strcmp(h->path, "/") == 0) h->path = "/index.html";
+	snprintf(path, sizeof(path), "%s%s", c->dir, h->path);
+	printf("path: %s\n", path);
+	sf = fopen(path, "r");
+
 	switch(method) {
 		case H_HEAD:
 		case H_GET:
-			if (strcmp(h->path, "/") == 0) h->path = "/index.html";
-			snprintf(path, sizeof(path), "%s%s", c->dir, h->path);
-			printf("path: %s\n", path);
-			sf = fopen(path, "r");
 			if (sf == NULL) {
 				response_code = 404;
 			} else {
@@ -205,6 +207,9 @@ void* cthread(void* arg) {
 		case H_PUT:
 			break;
 		case H_DELETE:
+			del = remove(path);
+			response_code = 204;
+			if (del == -1) response_code = 404;
 			break;
 		default:
 			response_code = 500;
