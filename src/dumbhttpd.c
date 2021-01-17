@@ -232,19 +232,25 @@ void* cthread(void* arg) {
 
 	while (w < to_w) {
 		w += write(c->cfd, sendstr+w, to_w - w);
-		printf("written: %i/%i\n", w, to_w);
+		printf("written headers: %i/%i\n", w, to_w);
 	}
 
-	w = 0; to_w = h->content_length;
+	w = 0; to_w = 0;
+	int b_w_total = 0;
 
-	if (to_w > 0) {
+	if (h->content_length > 0) {
 		while (fgets(data, BUFSIZE, sf) != NULL) {
-			w += write(c->cfd, data, strlen(data));
+			to_w = strlen(data);
+			while (w < to_w) {
+				w += write(c->cfd, data+w, to_w - w);
+				b_w_total += w;
+			}
+			w = 0, to_w = 0;
 		}
 		bzero(data, BUFSIZE);
 	}
 
-	printf("written body: %i/%i\n", w, to_w);
+	printf("written body: %i/%li\n", b_w_total, h->content_length);
 
 	close(c->cfd);
 
