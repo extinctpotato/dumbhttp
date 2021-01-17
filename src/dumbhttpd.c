@@ -17,7 +17,7 @@
 #include <netdb.h>
 #include <pthread.h> 
 #include "http_status_codes.h"
-#include "hash.h"
+#include "misc.h"
 
 struct cln {
 	int cfd;
