@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include "misc.h"
 
 unsigned long hash(char *str) {
 	unsigned long hash = 5381;
@@ -12,9 +13,10 @@ unsigned long hash(char *str) {
 	return hash;
 }
 
-void vprint(char* str) {
+void vprintc(char* str, char* pre) {
 	char *p = str;
 
+	if (pre != NULL) printf(pre);
 	while(*p) {
 		switch(*p) {
 			case '\r': printf("\\r");break;
@@ -23,4 +25,5 @@ void vprint(char* str) {
 		}
 		p++;
 	}
+	if (pre != NULL) printf(ANSI_CODE_RESET);
 }

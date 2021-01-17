@@ -82,7 +82,9 @@ void parse_headers(char* hstr, struct headers* h) {
 			continue;
 		}
 
+#ifdef DEBUG
 		printf("parsing: %s\n", line);
+#endif
 
 		// Key has no colon, while val is incremented
 		// to get rid of a spurious space.
@@ -151,9 +153,7 @@ void* cthread(void* arg) {
 		printf("received %i, total received: %i\n", rcv, rcvd);
 	}
 	
-	printf("\033[0;32m");
-	vprint(headers);
-	printf("\033[0m");
+	vprintc(headers, ANSI_CODE_GREEN);
 
 	strcpy(body, buf+crlf_pos);
 
@@ -173,9 +173,7 @@ void* cthread(void* arg) {
 		rcvd += rcv;
 	}
 
-	printf("\033[0;31m");
-	vprint(body);
-	printf("\033[0m\n");
+	vprintc(body, ANSI_CODE_RED);
 
 	// Content-Length might be >0 because client might have set it.
 	// Reset it back to zero as it might be reused for GET.
@@ -189,7 +187,7 @@ void* cthread(void* arg) {
 
 	if (strcmp(h->path, "/") == 0) h->path = "/index.html";
 	snprintf(path, sizeof(path), "%s%s", c->dir, h->path);
-	printf("path: %s\n", path);
+	printf("\npath: %s\n", path);
 	sf = fopen(path, "r");
 
 	switch(method) {
@@ -290,8 +288,6 @@ int main(int argc, char **argv) {
 
 	bind(sfd, (struct sockaddr*)&saddr, sizeof(saddr));
 	listen(sfd, 5);
-
-	printf("hashes: %i %li %i %li %li\n", H_GET, H_POST, H_PUT, H_HEAD, H_DELETE);
 
 	while(1) {
 		struct cln* c = malloc(sizeof(struct cln));
