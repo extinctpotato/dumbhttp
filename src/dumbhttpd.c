@@ -170,9 +170,8 @@ void* cthread(void* arg) {
 	strcpy(body, buf+crlf_pos);
 
 	parse_headers(headers, h);
-	printf("%s, %s, %s, %ld\n", h->method, h->path, h->ver, h->content_length);
-
-	printf("method hash: %li\n", hash(h->method));
+	unsigned long method = hash(h->method);
+	printf("%s, %s, %s, %ld, %li\n", h->method, h->path, h->ver, h->content_length, method);
 
 	// We might have already received some body in the previous calls,
 	// so let's receive whatever that remains in the TCP buffer.
@@ -199,7 +198,8 @@ void* cthread(void* arg) {
 	char data[BUFSIZE] = "";
 	FILE *sf;
 
-	switch(hash(h->method)) {
+	switch(method) {
+		case H_HEAD:
 		case H_GET:
 			if (strcmp(h->path, "/") == 0) h->path = "/index.html";
 			snprintf(path, sizeof(path), "%s%s", c->dir, h->path);
@@ -216,8 +216,6 @@ void* cthread(void* arg) {
 		case H_POST:
 			break;
 		case H_PUT:
-			break;
-		case H_HEAD:
 			break;
 		case H_DELETE:
 			break;
@@ -238,7 +236,7 @@ void* cthread(void* arg) {
 	w = 0; to_w = 0;
 	int b_w_total = 0;
 
-	if (h->content_length > 0) {
+	if (h->content_length > 0 && method == H_GET) {
 		while (fgets(data, BUFSIZE, sf) != NULL) {
 			to_w = strlen(data);
 			while (w < to_w) {
