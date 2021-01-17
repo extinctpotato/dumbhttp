@@ -5,6 +5,7 @@
 #define H_PUT	 193467006
 #define H_HEAD	 6384105719
 #define H_DELETE 6952134985656
+#define H_BREW	 6383904405
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -218,8 +219,12 @@ void* cthread(void* arg) {
 			response_code = 204;
 			if (del == -1) response_code = 404;
 			break;
+		case H_BREW:
+			// An easter egg. We all need some joy in life :)
+			response_code = 418;
+			break;
 		default:
-			response_code = 500;
+			response_code = 501;
 
 	}
 
