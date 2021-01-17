@@ -184,7 +184,7 @@ void* cthread(void* arg) {
 	int del;
 	char path[100] = "";
 	char data[BUFSIZE] = "";
-	FILE *sf;
+	FILE *sf, *rf;
 
 	if (strcmp(h->path, "/") == 0) h->path = "/index.html";
 	snprintf(path, sizeof(path), "%s%s", c->dir, h->path);
@@ -203,8 +203,15 @@ void* cthread(void* arg) {
 			}
 			break;
 		case H_POST:
-			break;
+			// Make the POST operation idempotent.
+			if (access(path, F_OK) == 0) {
+				response_code = 409;
+				break;
+			}
 		case H_PUT:
+			rf = fopen(path, "w");
+			fputs(body, rf);
+			fclose(rf);
 			break;
 		case H_DELETE:
 			del = remove(path);
@@ -235,9 +242,13 @@ void* cthread(void* arg) {
 				w += write(c->cfd, data+w, to_w - w);
 				b_w_total += w;
 			}
+#ifdef DEBUG
+			printf("writing body: %i/%li\n", b_w_total, h->content_length);
+#endif
 			w = 0, to_w = 0;
 		}
 		bzero(data, BUFSIZE);
+		fclose(sf);
 	}
 
 	printf("written body: %i/%li\n", b_w_total, h->content_length);
