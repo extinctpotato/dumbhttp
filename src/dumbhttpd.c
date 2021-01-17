@@ -35,19 +35,6 @@ struct headers {
 	long content_length;
 };
 
-void vprint(char* str) {
-	char *p = str;
-
-	while(*p) {
-		switch(*p) {
-			case '\r': printf("\\r");break;
-			case '\n': printf("\\n\n");break;
-			default: putchar(*p);break;
-		}
-		p++;
-	}
-}
-
 void make_headers(int s, struct headers* h, char* resp, int resp_size) {
 	char *cursor = resp;
 	snprintf(cursor, resp_size, "HTTP/1.1 %i %s\r\n", s, HS_reasonPhrase(s));

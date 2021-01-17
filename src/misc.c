@@ -12,3 +12,15 @@ unsigned long hash(char *str) {
 	return hash;
 }
 
+void vprint(char* str) {
+	char *p = str;
+
+	while(*p) {
+		switch(*p) {
+			case '\r': printf("\\r");break;
+			case '\n': printf("\\n\n");break;
+			default: putchar(*p);break;
+		}
+		p++;
+	}
+}
