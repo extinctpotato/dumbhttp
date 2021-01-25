@@ -125,8 +125,17 @@ void* cthread(void* arg) {
 		rcv = read(c->cfd, buf, BUFSIZE-1);
 
 		if (rcv == 0) {
+			printf("end of stream\n");
+			if (rcvd == 0) {
+				printf("no headers received\n");
+				close(c->cfd);
+				free(c);
+				free(h);
+				return EXIT_SUCCESS;
+			}
 			break;
 		} else if (rcv == -1) {
+			printf("error reading %i\n", BUFSIZE);
 			break;
 		}
 
