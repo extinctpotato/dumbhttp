@@ -176,10 +176,14 @@ void* cthread(void* arg) {
 	int content_length = h->content_length - strlen(body);
 	rcv = 0;
 	rcvd = 0;
+
+	printf("body so far: %li\n", strlen(body));
+	printf("remaining content length: %i\n", content_length);
 	
 	while (rcvd != content_length) {
 		rcv = read(c->cfd, buf, BUFSIZE-1);
 		rcvd += rcv;
+		printf("receiving %i/%i\n", rcvd, content_length);
 	}
 
 	vprintc(body, ANSI_CODE_RED);
